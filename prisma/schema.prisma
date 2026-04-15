@@ -3,9 +3,11 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Uncomment directUrl and set DIRECT_URL in your environment when using
+  // a connection pooler (e.g. Neon pgBouncer, Supabase pgBouncer).
+  // directUrl = env("DIRECT_URL")
 }
 
 model User {
