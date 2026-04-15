@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ShoppingCart, Minus, Plus } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
+import { useToastStore } from "@/store/toastStore";
 import Button from "@/components/ui/Button";
 
 interface Product {
@@ -17,6 +18,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
+  const addToast = useToastStore((s) => s.addToast);
 
   const handleAdd = () => {
     addItem({
@@ -27,6 +29,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
       quantity: qty,
       stock: product.stock,
     });
+    addToast(`${product.name} added to cart`);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };

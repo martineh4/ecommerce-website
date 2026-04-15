@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
+import { useToastStore } from "@/store/toastStore";
 import { Product } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import Button from "@/components/ui/Button";
@@ -17,6 +18,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
+  const addToast = useToastStore((s) => s.addToast);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -28,6 +30,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       quantity: 1,
       stock: product.stock,
     });
+    addToast(`${product.name} added to cart`);
   };
 
   const avgRating =

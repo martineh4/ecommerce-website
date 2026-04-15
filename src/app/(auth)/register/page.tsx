@@ -12,11 +12,25 @@ export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const validatePassword = (value: string): string => {
+    if (value.length < 8) return "Password must be at least 8 characters.";
+    if (!/[0-9]/.test(value)) return "Password must contain at least one number.";
+    if (!/[^a-zA-Z0-9]/.test(value)) return "Password must contain at least one special character.";
+    return "";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    const pwErr = validatePassword(form.password);
+    if (pwErr) {
+      setPasswordError(pwErr);
+      return;
+    }
 
     if (form.password !== form.confirm) {
       setError("Passwords do not match.");
@@ -80,15 +94,29 @@ export default function RegisterPage() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
-          <Input
-            id="password"
-            label="Password"
-            type="password"
-            placeholder="At least 6 characters"
-            required
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-          />
+          <div>
+            <Input
+              id="password"
+              label="Password"
+              type="password"
+              placeholder="At least 8 characters"
+              required
+              value={form.password}
+              onChange={(e) => {
+                const val = e.target.value;
+                setForm({ ...form, password: val });
+                setPasswordError(val ? validatePassword(val) : "");
+              }}
+            />
+            {passwordError && (
+              <p className="mt-1 text-xs text-red-600">{passwordError}</p>
+            )}
+            {!passwordError && form.password.length === 0 && (
+              <p className="mt-1 text-xs text-gray-400">
+                Min 8 characters, one number, one special character
+              </p>
+            )}
+          </div>
           <Input
             id="confirm"
             label="Confirm Password"

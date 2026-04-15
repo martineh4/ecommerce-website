@@ -11,7 +11,7 @@ export default function Navbar() {
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const itemCount = useCartStore((s) => s.itemCount)();
+  const itemCount = useCartStore((s) => s.items.reduce((sum, i) => sum + i.quantity, 0));
 
   const navLinks = [
     { href: "/products", label: "Products" },
