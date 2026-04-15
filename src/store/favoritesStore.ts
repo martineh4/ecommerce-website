@@ -18,7 +18,7 @@ export const useFavoritesStore = create<FavoritesState>()(
 
       addFavorite: (productId) => {
         set((state) => ({
-          productIds: [...new Set([...state.productIds, productId])],
+          productIds: Array.from(new Set([...state.productIds, productId])),
         }));
       },
 

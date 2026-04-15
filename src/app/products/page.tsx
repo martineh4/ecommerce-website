@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import prisma from "@/lib/prisma";
+import { serializeData } from "@/lib/utils";
 import ProductGrid from "@/components/products/ProductGrid";
 import ProductFilters from "@/components/products/ProductFilters";
 import { Prisma } from "@prisma/client";
+import type { Product } from "@/types";
 
 interface SearchParams {
   search?: string;
@@ -72,7 +74,9 @@ async function getProducts(params: SearchParams) {
     prisma.product.count({ where }),
   ]);
 
-  return { products, total, totalPages: Math.ceil(total / limit), currentPage };
+  return serializeData<{ products: Product[]; total: number; totalPages: number; currentPage: number }>(
+    { products, total, totalPages: Math.ceil(total / limit), currentPage }
+  );
 }
 
 export default async function ProductsPage({

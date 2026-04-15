@@ -2,9 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ShieldCheck, Truck, RefreshCw, Headphones } from "lucide-react";
 import prisma from "@/lib/prisma";
+import { serializeData } from "@/lib/utils";
 import ProductCard from "@/components/products/ProductCard";
 import CategoryCard from "@/components/categories/CategoryCard";
 import Button from "@/components/ui/Button";
+import type { Product, Category } from "@/types";
 
 async function getFeaturedData() {
   const [products, categories] = await Promise.all([
@@ -24,7 +26,7 @@ async function getFeaturedData() {
       orderBy: { name: "asc" },
     }),
   ]);
-  return { products, categories };
+  return serializeData<{ products: Product[]; categories: Category[] }>({ products, categories });
 }
 
 const features = [

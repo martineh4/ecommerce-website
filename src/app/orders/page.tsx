@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { serializeData } from "@/lib/utils";
 import OrderCard from "@/components/orders/OrderCard";
+import type { Order } from "@/types";
 import { PackageX } from "lucide-react";
 import Link from "next/link";
 
@@ -10,15 +12,17 @@ export default async function OrdersPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const orders = await prisma.order.findMany({
-    where: { userId: session.user.id },
-    include: {
-      items: {
-        include: { product: { select: { id: true, name: true, images: true } } },
+  const orders = serializeData<Order[]>(
+    await prisma.order.findMany({
+      where: { userId: session.user.id },
+      include: {
+        items: {
+          include: { product: { select: { id: true, name: true, images: true } } },
+        },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    })
+  );
 
   if (orders.length === 0) {
     return (

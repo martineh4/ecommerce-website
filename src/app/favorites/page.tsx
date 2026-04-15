@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { serializeData } from "@/lib/utils";
 import ProductCard from "@/components/products/ProductCard";
+import type { Product } from "@/types";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 
@@ -10,7 +12,7 @@ export default async function FavoritesPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const favorites = await prisma.favorite.findMany({
+  const favorites = serializeData<{ id: string; product: Product }[]>(await prisma.favorite.findMany({
     where: { userId: session.user.id },
     include: {
       product: {
@@ -22,7 +24,7 @@ export default async function FavoritesPage() {
       },
     },
     orderBy: { createdAt: "desc" },
-  });
+  }));
 
   if (favorites.length === 0) {
     return (

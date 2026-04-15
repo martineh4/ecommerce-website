@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import prisma from "@/lib/prisma";
+import { serializeData } from "@/lib/utils";
 import ProductGrid from "@/components/products/ProductGrid";
+import type { Product } from "@/types";
 
 export default async function CategoryPage({ params }: { params: { slug: string } }) {
   const category = await prisma.category.findUnique({
@@ -12,15 +14,17 @@ export default async function CategoryPage({ params }: { params: { slug: string 
 
   if (!category) notFound();
 
-  const products = await prisma.product.findMany({
-    where: { categoryId: category.id },
-    include: {
-      category: { select: { id: true, name: true, slug: true } },
-      reviews: { select: { rating: true } },
-      _count: { select: { favorites: true, reviews: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const products = serializeData<Product[]>(
+    await prisma.product.findMany({
+      where: { categoryId: category.id },
+      include: {
+        category: { select: { id: true, name: true, slug: true } },
+        reviews: { select: { rating: true } },
+        _count: { select: { favorites: true, reviews: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    })
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">

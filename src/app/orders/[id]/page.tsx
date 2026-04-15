@@ -5,8 +5,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, CheckCircle } from "lucide-react";
 import prisma from "@/lib/prisma";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, serializeData } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
+import type { Order } from "@/types";
+
+type OrderDetail = Order & {
+  items: {
+    id: string;
+    quantity: number;
+    price: number;
+    product: { id: string; name: string; images: string[]; slug: string };
+  }[];
+};
 
 const statusVariant: Record<string, "default" | "success" | "warning" | "danger" | "info"> = {
   PENDING: "warning",
@@ -22,7 +32,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const order = await prisma.order.findFirst({
+  const raw = await prisma.order.findFirst({
     where: { id: params.id, userId: session.user.id },
     include: {
       items: {
@@ -33,8 +43,9 @@ export default async function OrderDetailPage({ params }: { params: { id: string
     },
   });
 
-  if (!order) notFound();
+  if (!raw) notFound();
 
+  const order = serializeData<OrderDetail>(raw);
   const currentStep = order.status === "CANCELLED" ? -1 : statusSteps.indexOf(order.status as typeof statusSteps[number]);
 
   return (
@@ -88,12 +99,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
         <div className="space-y-4">
           {order.items.map((item) => (
             <div key={item.id} className="flex gap-4">
-              <Link href={`/products/${item.product.slug}`}>
+              <Link href={`/products/${item.product?.slug ?? ""}`}>
                 <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                  {item.product.images[0] ? (
+                  {item.product?.images[0] ? (
                     <Image
                       src={item.product.images[0]}
-                      alt={item.product.name}
+                      alt={item.product?.name ?? "Product"}
                       fill
                       className="object-cover"
                       sizes="64px"
@@ -104,13 +115,13 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                 </div>
               </Link>
               <div className="flex-1">
-                <Link href={`/products/${item.product.slug}`} className="font-medium text-gray-900 hover:text-primary-600 text-sm">
-                  {item.product.name}
+                <Link href={`/products/${item.product?.slug ?? ""}`} className="font-medium text-gray-900 hover:text-primary-600 text-sm">
+                  {item.product?.name}
                 </Link>
                 <p className="text-xs text-gray-500 mt-0.5">Qty: {item.quantity}</p>
               </div>
               <div className="text-sm font-semibold text-gray-900">
-                {formatPrice(Number(item.price) * item.quantity)}
+                {formatPrice(item.price * item.quantity)}
               </div>
             </div>
           ))}

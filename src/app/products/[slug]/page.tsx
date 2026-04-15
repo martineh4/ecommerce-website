@@ -3,12 +3,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import prisma from "@/lib/prisma";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, serializeData } from "@/lib/utils";
 import AddToCartButton from "./AddToCartButton";
 import FavoriteButton from "@/components/favorites/FavoriteButton";
 import StarRating from "@/components/products/StarRating";
 import Badge from "@/components/ui/Badge";
 import ProductCard from "@/components/products/ProductCard";
+import type { Product, Category, Review } from "@/types";
+
+type ProductDetail = Product & {
+  category: Category;
+  reviews: (Review & { user: { id: string; name: string; image: string | null } })[];
+  _count: { favorites: number; reviews: number };
+};
 
 export async function generateStaticParams() {
   const products = await prisma.product.findMany({ select: { slug: true } });
@@ -16,7 +23,7 @@ export async function generateStaticParams() {
 }
 
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
-  const product = await prisma.product.findUnique({
+  const raw = await prisma.product.findUnique({
     where: { slug: params.slug },
     include: {
       category: true,
@@ -28,14 +35,16 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
     },
   });
 
-  if (!product) notFound();
+  if (!raw) notFound();
+
+  const product = serializeData<ProductDetail>(raw);
 
   const avgRating =
     product.reviews.length > 0
       ? product.reviews.reduce((s, r) => s + r.rating, 0) / product.reviews.length
       : 0;
 
-  const related = await prisma.product.findMany({
+  const relatedRaw = await prisma.product.findMany({
     where: { categoryId: product.categoryId, id: { not: product.id } },
     take: 4,
     include: {
@@ -44,6 +53,8 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
       _count: { select: { favorites: true, reviews: true } },
     },
   });
+
+  const related = serializeData<Product[]>(relatedRaw);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
@@ -150,9 +161,9 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm">
-                      {review.user.name.charAt(0).toUpperCase()}
+                      {review.user?.name?.charAt(0).toUpperCase() ?? "?"}
                     </div>
-                    <span className="font-medium text-gray-900 text-sm">{review.user.name}</span>
+                    <span className="font-medium text-gray-900 text-sm">{review.user?.name}</span>
                   </div>
                   <StarRating rating={review.rating} />
                 </div>
