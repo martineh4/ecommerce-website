@@ -8,6 +8,8 @@ import type { Order } from "@/types";
 import { PackageX } from "lucide-react";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrdersPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");

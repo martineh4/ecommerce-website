@@ -11,16 +11,13 @@ import Badge from "@/components/ui/Badge";
 import ProductCard from "@/components/products/ProductCard";
 import type { Product, Category, Review } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 type ProductDetail = Product & {
   category: Category;
   reviews: (Review & { user: { id: string; name: string; image: string | null } })[];
   _count: { favorites: number; reviews: number };
 };
-
-export async function generateStaticParams() {
-  const products = await prisma.product.findMany({ select: { slug: true } });
-  return products.map((p) => ({ slug: p.slug }));
-}
 
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
   const raw = await prisma.product.findUnique({

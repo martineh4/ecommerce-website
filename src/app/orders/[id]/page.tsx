@@ -9,6 +9,8 @@ import { formatPrice, serializeData } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
 import type { Order } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 type OrderDetail = Order & {
   items: {
     id: string;

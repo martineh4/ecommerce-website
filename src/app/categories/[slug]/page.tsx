@@ -6,6 +6,8 @@ import { serializeData } from "@/lib/utils";
 import ProductGrid from "@/components/products/ProductGrid";
 import type { Product } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 export default async function CategoryPage({ params }: { params: { slug: string } }) {
   const category = await prisma.category.findUnique({
     where: { slug: params.slug },

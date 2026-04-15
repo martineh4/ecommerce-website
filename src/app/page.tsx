@@ -8,6 +8,8 @@ import CategoryCard from "@/components/categories/CategoryCard";
 import Button from "@/components/ui/Button";
 import type { Product, Category } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 async function getFeaturedData() {
   const [products, categories] = await Promise.all([
     prisma.product.findMany({

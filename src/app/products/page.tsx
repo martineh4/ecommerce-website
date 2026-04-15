@@ -6,6 +6,8 @@ import ProductFilters from "@/components/products/ProductFilters";
 import { Prisma } from "@prisma/client";
 import type { Product } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 interface SearchParams {
   search?: string;
   category?: string;
