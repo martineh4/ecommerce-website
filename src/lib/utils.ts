@@ -5,16 +5,19 @@ import { twMerge } from "tailwind-merge";
 // numbers and will fail TypeScript checks in strict/build mode. This helper
 // serialises any Prisma result to a plain JS object, converting every Decimal
 // to a number so downstream components receive the expected types.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function decimalReplacer(_key: string, value: any) {
-  if (value !== null && typeof value === "object" && typeof value.toNumber === "function") {
-    return value.toNumber();
+function decimalReplacer(_key: string, value: unknown): unknown {
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    "toNumber" in value &&
+    typeof (value as { toNumber: unknown }).toNumber === "function"
+  ) {
+    return (value as { toNumber: () => number }).toNumber();
   }
   return value;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function serializeData<T>(data: any): T {
+export function serializeData<T>(data: unknown): T {
   return JSON.parse(JSON.stringify(data, decimalReplacer));
 }
 
