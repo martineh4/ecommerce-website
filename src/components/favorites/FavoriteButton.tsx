@@ -19,6 +19,8 @@ export default function FavoriteButton({ productId, className }: FavoriteButtonP
   const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
 
   const toggle = async (e: React.MouseEvent) => {
+    // stopPropagation prevents the click from bubbling to the parent <Link>
+    // wrapping the product card, which would navigate away unintentionally.
     e.preventDefault();
     e.stopPropagation();
 
@@ -27,6 +29,9 @@ export default function FavoriteButton({ productId, className }: FavoriteButtonP
       return;
     }
 
+    // Optimistic update: mutate the local store immediately so the heart icon
+    // responds instantly, then fire the API call in the background. Errors are
+    // silently swallowed here — in a production app you'd revert on failure.
     if (isFavorite) {
       removeFavorite(productId);
       await fetch(`/api/favorites?productId=${productId}`, { method: "DELETE" });

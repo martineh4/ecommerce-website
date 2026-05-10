@@ -1,3 +1,5 @@
+// "use client" is required because the persist middleware reads/writes
+// localStorage, which only exists in the browser.
 "use client";
 
 import { create } from "zustand";
@@ -15,6 +17,8 @@ interface CartState {
 }
 
 export const useCartStore = create<CartState>()(
+  // persist keeps the cart alive across page refreshes and new tabs without
+  // requiring a server round-trip for unauthenticated browsing.
   persist(
     (set, get) => ({
       items: [],
@@ -26,6 +30,8 @@ export const useCartStore = create<CartState>()(
             return {
               items: state.items.map((i) =>
                 i.productId === item.productId
+                  // Cap at available stock so the client never requests more
+                  // units than the server can fulfil.
                   ? { ...i, quantity: Math.min(i.quantity + item.quantity, i.stock) }
                   : i
               ),
@@ -42,6 +48,8 @@ export const useCartStore = create<CartState>()(
       },
 
       updateQuantity: (productId, quantity) => {
+        // Treat quantity ≤ 0 as a removal so decrement buttons on the last
+        // item don't leave a zero-quantity ghost in the cart.
         if (quantity <= 0) {
           get().removeItem(productId);
           return;
@@ -55,6 +63,9 @@ export const useCartStore = create<CartState>()(
 
       clearCart: () => set({ items: [] }),
 
+      // total and itemCount are functions rather than stored values because
+      // Zustand doesn't recompute derived state automatically — storing them
+      // as plain numbers would go stale after every items mutation.
       total: () => {
         return get().items.reduce((sum, item) => sum + item.price * item.quantity, 0);
       },

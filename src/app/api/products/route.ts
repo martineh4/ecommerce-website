@@ -11,6 +11,9 @@ export async function GET(req: NextRequest) {
     const maxPrice = searchParams.get("maxPrice");
     const sort = searchParams.get("sort") ?? "newest";
     const featured = searchParams.get("featured");
+    // Clamp page to ≥ 1 so negative or zero values don't produce a negative
+    // skip offset. Cap limit at 50 to prevent a single request from dumping
+    // the entire catalogue.
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
     const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "12"));
     const skip = (page - 1) * limit;
@@ -43,6 +46,9 @@ export async function GET(req: NextRequest) {
         ? { favorites: { _count: "desc" } }
         : { createdAt: "desc" };
 
+    // Fetch the page of results and the total count in parallel — both queries
+    // hit the same DB but are independent, so sequential execution would be
+    // wasted latency.
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,

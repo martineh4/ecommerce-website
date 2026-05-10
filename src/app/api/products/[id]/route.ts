@@ -6,6 +6,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Accept either the DB id or the human-readable slug so both
+    // /products/cm123abc and /products/cool-running-shoe resolve correctly
+    // without separate endpoints.
     const product = await prisma.product.findFirst({
       where: {
         OR: [{ id: params.id }, { slug: params.id }],

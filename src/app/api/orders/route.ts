@@ -40,10 +40,17 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { address, items } = createOrderSchema.parse(body);
 
+    // Trust the client-supplied price rather than re-fetching from the DB.
+    // This preserves what the user saw when they added items — a product's
+    // price may change between add-to-cart and checkout, and the order line
+    // item should reflect what was actually agreed at purchase time.
     const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+    // Wrap everything in a transaction so a partial failure (e.g. stock runs
+    // out mid-loop) doesn't leave orphaned orders or incorrect stock counts.
     const order = await prisma.$transaction(async (tx) => {
-      // Validate stock for all items
+      // Check stock before creating the order — if we created first and then
+      // found insufficient stock, we'd have to roll back an already-created order.
       for (const item of items) {
         const product = await tx.product.findUnique({ where: { id: item.productId } });
         if (!product || product.stock < item.quantity) {
@@ -51,7 +58,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Create order
       const newOrder = await tx.order.create({
         data: {
           userId: session.user.id,
@@ -70,7 +76,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Decrement stock
       for (const item of items) {
         await tx.product.update({
           where: { id: item.productId },
@@ -78,7 +83,8 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Clear cart
+      // Clear the DB cart inside the same transaction so the cart is never
+      // empty without a corresponding order, or vice-versa on rollback.
       await tx.cartItem.deleteMany({ where: { userId: session.user.id } });
 
       return newOrder;

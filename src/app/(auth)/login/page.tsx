@@ -19,6 +19,10 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
+    // redirect: false prevents NextAuth from handling the redirect itself so
+    // we can call router.refresh() after push() — without that refresh, server
+    // components on the destination page would still see the old (unauthenticated)
+    // session and show the wrong UI.
     const res = await signIn("credentials", {
       email: form.email,
       password: form.password,

@@ -10,6 +10,9 @@ export async function GET(
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Passing `undefined` for a Prisma filter field omits it entirely, so admins
+  // get no userId restriction and can look up any order, while regular users
+  // are scoped to their own orders without a separate code path.
   const order = await prisma.order.findFirst({
     where: {
       id: params.id,

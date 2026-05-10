@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
   if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
   if (product.stock < quantity) return NextResponse.json({ error: "Insufficient stock" }, { status: 400 });
 
+  // Upsert on the compound (userId, productId) unique key so that adding an
+  // item already in the cart increments its quantity rather than duplicating it.
   const item = await prisma.cartItem.upsert({
     where: { userId_productId: { userId: session.user.id, productId } },
     update: { quantity: { increment: quantity } },
@@ -42,6 +44,9 @@ export async function DELETE(req: NextRequest) {
 
   const productId = new URL(req.url).searchParams.get("productId");
 
+  // Omitting ?productId clears the entire cart (used on checkout). Including it
+  // removes a single line item — both cases share one endpoint to keep the
+  // client API surface small.
   if (productId) {
     await prisma.cartItem.deleteMany({ where: { userId: session.user.id, productId } });
   } else {

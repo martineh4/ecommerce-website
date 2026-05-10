@@ -98,6 +98,7 @@ export default function CartPage() {
 
         {/* Summary */}
         <div className="lg:col-span-1">
+          {/* sticky top-24 accounts for the 64px navbar + 32px breathing room */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4 sticky top-24">
             <h2 className="text-lg font-semibold text-gray-900">Order Summary</h2>
 

@@ -24,6 +24,9 @@ export default function ProductFilters({ categories }: ProductFiltersProps) {
       } else {
         params.delete(key);
       }
+      // Reset to page 1 whenever any filter changes — keeping the current page
+      // number would often produce an empty result set (e.g. page 4 of a
+      // narrower filtered query that only has 2 pages).
       params.delete("page");
       router.push(`/products?${params.toString()}`);
     },

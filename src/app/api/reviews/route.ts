@@ -18,9 +18,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { productId, rating, comment } = reviewSchema.parse(body);
 
+    // Prisma's upsert requires a unique where clause, but there's no
+    // (userId, productId) unique constraint on the Review model. Work around
+    // this by looking up the existing review id first: if found, upsert targets
+    // that row; if not, the "new" sentinel will never match so Prisma falls
+    // through to the create branch. This has a race condition (two concurrent
+    // first-reviews could both create), but it's acceptable for a one-review-
+    // per-user requirement that isn't enforced at the DB level.
     const review = await prisma.review.upsert({
       where: {
-        // We don't have a unique constraint, so we find first
         id: (await prisma.review.findFirst({
           where: { userId: session.user.id, productId },
           select: { id: true },
