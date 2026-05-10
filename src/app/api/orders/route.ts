@@ -11,7 +11,8 @@ const createOrderSchema = z.object({
     z.object({
       productId: z.string(),
       quantity: z.number().int().positive(),
-      price: z.number().positive(),
+      // price is intentionally absent from the schema — we fetch authoritative
+      // prices from the DB to prevent a client from submitting a manipulated price.
     })
   ).min(1),
 });
@@ -45,23 +46,28 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { address, items } = createOrderSchema.parse(body);
 
-    // Trust the client-supplied price rather than re-fetching from the DB.
-    // This preserves what the user saw when they added items — a product's
-    // price may change between add-to-cart and checkout, and the order line
-    // item should reflect what was actually agreed at purchase time.
-    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
     // Wrap everything in a transaction so a partial failure (e.g. stock runs
     // out mid-loop) doesn't leave orphaned orders or incorrect stock counts.
     const order = await prisma.$transaction(async (tx) => {
       // Check stock before creating the order — if we created first and then
       // found insufficient stock, we'd have to roll back an already-created order.
+      // While fetching each product for the stock check, collect its DB price so
+      // the order total is computed from server-side values, not client-supplied ones.
+      const resolvedItems: { productId: string; quantity: number; price: Prisma.Decimal }[] = [];
+
       for (const item of items) {
         const product = await tx.product.findUnique({ where: { id: item.productId } });
-        if (!product || product.stock < item.quantity) {
-          throw new Error(`Insufficient stock for product ${item.productId}`);
-        }
+        if (!product) throw new Error(`Product not found: ${item.productId}`);
+        if (product.stock < item.quantity) throw new Error(`Insufficient stock for product ${item.productId}`);
+        resolvedItems.push({ productId: item.productId, quantity: item.quantity, price: product.price });
       }
+
+      // Compute total from DB prices — the client sends prices from its cart
+      // store but we never use them, preventing order price manipulation.
+      const total = resolvedItems.reduce(
+        (sum, item) => sum + item.price.toNumber() * item.quantity,
+        0
+      );
 
       const newOrder = await tx.order.create({
         data: {
@@ -69,7 +75,7 @@ export async function POST(req: NextRequest) {
           total,
           address,
           items: {
-            create: items.map((item) => ({
+            create: resolvedItems.map((item) => ({
               productId: item.productId,
               quantity: item.quantity,
               price: item.price,
@@ -81,7 +87,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      for (const item of items) {
+      for (const item of resolvedItems) {
         await tx.product.update({
           where: { id: item.productId },
           data: { stock: { decrement: item.quantity } },

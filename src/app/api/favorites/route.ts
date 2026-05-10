@@ -36,6 +36,9 @@ export async function POST(req: NextRequest) {
     const { productId } = body;
     if (!productId) return NextResponse.json({ error: "productId required" }, { status: 400 });
 
+    const product = await prisma.product.findUnique({ where: { id: productId }, select: { id: true } });
+    if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+
     // upsert with an empty update is intentional: it makes the POST idempotent.
     // If the user somehow fires the request twice (double-click, retry), the
     // second call is a no-op rather than throwing a unique-constraint error.

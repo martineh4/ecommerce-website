@@ -93,6 +93,10 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    const product = await prisma.product.findUnique({ where: { id: productId }, select: { stock: true } });
+    if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    if (quantity > product.stock) return NextResponse.json({ error: "Insufficient stock" }, { status: 400 });
+
     const item = await prisma.cartItem.update({
       where: { userId_productId: { userId: session.user.id, productId } },
       data: { quantity },
