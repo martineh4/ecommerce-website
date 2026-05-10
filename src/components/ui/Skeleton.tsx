@@ -27,3 +27,29 @@ export function ProductCardSkeleton() {
     </div>
   );
 }
+
+export function CategoryCardSkeleton() {
+  return <Skeleton className="h-48 rounded-xl" />;
+}
+
+export function OrderCardSkeleton() {
+  return (
+    <div className="border border-gray-200 rounded-xl p-5 bg-white">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1.5">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+        <Skeleton className="h-6 w-20 rounded-full" />
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="space-y-1.5">
+            <Skeleton className="h-3 w-10" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
