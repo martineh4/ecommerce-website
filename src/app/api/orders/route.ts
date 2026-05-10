@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 const createOrderSchema = z.object({
@@ -19,17 +20,21 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const orders = await prisma.order.findMany({
-    where: { userId: session.user.id },
-    include: {
-      items: {
-        include: { product: { select: { id: true, name: true, images: true, slug: true } } },
+  try {
+    const orders = await prisma.order.findMany({
+      where: { userId: session.user.id },
+      include: {
+        items: {
+          include: { product: { select: { id: true, name: true, images: true, slug: true } } },
+        },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    });
 
-  return NextResponse.json(orders);
+    return NextResponse.json(orders);
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -95,6 +100,15 @@ export async function POST(req: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }
+    // Surface Prisma errors as 500 — they indicate infrastructure problems, not
+    // client mistakes, so we must not leak their messages to the response.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError ||
+      error instanceof Prisma.PrismaClientUnknownRequestError
+    ) {
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+    // Our own throws (e.g. "Insufficient stock…") are intentional domain errors.
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
