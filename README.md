@@ -2,7 +2,7 @@
 
 A full-stack e-commerce web application built with Next.js 14 App Router, TypeScript, and PostgreSQL. Users can browse products, filter by category and price, manage a persistent shopping cart, place orders, save favourites, and leave reviews — all behind a secure JWT-based authentication system.
 
-**Live demo:** [your-deployment-url.vercel.app](https://your-deployment-url.vercel.app)  
+**Live demo:** [ecommerce-website-hs8zpg9q4-martineh4s-projects.vercel.app](https://ecommerce-website-hs8zpg9q4-martineh4s-projects.vercel.app)  
 **Demo credentials:**
 | Role | Email | Password |
 |------|-------|----------|
