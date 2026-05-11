@@ -100,6 +100,56 @@ npm run db:generate # regenerate Prisma client after schema changes
 
 ---
 
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Browser                             │
+│                                                             │
+│   Client Components          Zustand Stores                 │
+│   (cart, filters,        ┌─────────────────┐               │
+│    favourites, toasts)   │ cart · favs ·   │               │
+│                          │ toasts          │               │
+│                          └────────┬────────┘               │
+└───────────────┬──────────────────┬┴────────────────────────┘
+                │ HTTP requests    │ localStorage (persist)
+                │ (fetch/router)   │
+┌───────────────▼──────────────────▼────────────────────────┐
+│                      Next.js Server                        │
+│                                                            │
+│  ┌─────────────────────┐   ┌────────────────────────────┐ │
+│  │   Server Components │   │       API Routes           │ │
+│  │                     │   │                            │ │
+│  │  products · orders  │   │  /api/cart                 │ │
+│  │  categories · favs  │   │  /api/orders               │ │
+│  │  (direct DB reads)  │   │  /api/favourites           │ │
+│  └──────────┬──────────┘   │  /api/products             │ │
+│             │              │  /api/reviews              │ │
+│             │              └────────────┬───────────────┘ │
+│             │                           │                  │
+│  ┌──────────▼───────────────────────────▼──────────────┐  │
+│  │                   NextAuth.js                        │  │
+│  │                                                      │  │
+│  │  credentials provider · JWT sessions · role (USER/  │  │
+│  │  ADMIN) · getServerSession on every auth'd route     │  │
+│  └──────────────────────────┬───────────────────────────┘  │
+└─────────────────────────────┼──────────────────────────────┘
+                              │
+┌─────────────────────────────▼──────────────────────────────┐
+│                      Prisma ORM                            │
+│          (transactions · type-safe queries · Decimal)      │
+└─────────────────────────────┬──────────────────────────────┘
+                              │
+┌─────────────────────────────▼──────────────────────────────┐
+│                 PostgreSQL (Neon)                          │
+│                                                            │
+│   User · Product · Category · Order · OrderItem           │
+│   CartItem · Favourite · Review                            │
+└────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Project Structure
 
 ```
